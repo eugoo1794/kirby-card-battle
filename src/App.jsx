@@ -3,7 +3,7 @@ import {
   CARD_RARITY, CARD_POOL, SUPPORT_CARDS, TOKEN_ICEPILLAR,
   TOKEN_CAPPYBARE, TOKEN_RANDIA2,
   TOKEN_STARBLOCK, TOKEN_ENERGY, TOKEN_YELLOWSNAKE, TOKEN_DUBIAJR,
-  TOKEN_FOOD, TOKEN_WAPOD, TOKEN_BOMB, TOKEN_SNOWBALL,
+  TOKEN_FOOD, TOKEN_WAPOD, TOKEN_BOMB, TOKEN_SNOWBALL, TOKEN_DARKMIRROR,
 } from "./cards";
 
 // ═══════════════════════════════════════════
@@ -911,6 +911,20 @@ const SUMMON_EFFECT_HANDLERS = {
   mr_shine: (ctx) => { const n1 = ctx.millCards(ctx.ap, 2); const n2 = ctx.millCards(ctx.opp, 2); ctx.addLog("🌟 ミスター・シャイン: お互いの山札を上から2枚ずつ破棄！(自分" + n1 + "枚・相手" + n2 + "枚)"); },
   mr_bright: (ctx) => { ctx.damageLeader(ctx.ap, 2); ctx.damageLeader(ctx.opp, 2); ctx.addLog("☀️ ミスター・ブライト: お互いのリーダーに2ダメージ！"); },
   summon_copy_if_leader_damaged: (ctx) => { if (ctx.player.leaderHp < 20) { const sl = ctx.spawnUnit(ctx.ap, ctx.card); if (sl) ctx.addLog("🔥 フレイマー: 味方リーダーがダメージ中！もう1体召喚！"); } },
+  summon_dark_meta: (ctx) => {
+    const emptySlots = UNIT_SLOTS.filter(sl => !ctx.s.players[ctx.ap].board[sl] && sl !== ctx.slot);
+    if (emptySlots.length === 0) { ctx.addLog("🌑 ダークメタナイト: 空きマスなし、召喚時効果不発"); return; }
+    const mirrorCount = Math.min(emptySlots.length, 3);
+    const shuffled = [...emptySlots].sort(() => Math.random() - 0.5);
+    const mirrorSlots = shuffled.slice(0, mirrorCount);
+    const spawnedSlots = [];
+    for (const sl of mirrorSlots) { const spawned = ctx.spawnUnit(ctx.ap, TOKEN_DARKMIRROR, sl); if (spawned) spawnedSlots.push(spawned); }
+    if (spawnedSlots.length === 0) return;
+    const hostSlot = rand(spawnedSlots);
+    ctx.s.players[ctx.ap].board[hostSlot].hostingDarkMeta = true;
+    ctx.s.players[ctx.ap].board[ctx.slot] = null;
+    ctx.addLog("🌑 ダークメタナイト: 鏡像" + spawnedSlots.length + "体を生成、その中に潜んだ…");
+  },
   summon_copy_always: (ctx) => { const sl = ctx.spawnUnit(ctx.ap, ctx.card); if (sl) ctx.addLog("✨ モプーがもう1体！"); },
   summon_pruid: (ctx) => { const n = ctx.millCards(ctx.ap, 2); if (n > 0) ctx.addLog("📤 プルイド: 山札" + n + "枚破棄！"); const sl = ctx.spawnUnit(ctx.ap, ctx.card); if (sl) ctx.addLog("✨ プルイドがもう1体！"); },
   summon_dubia: (ctx) => { let added = 0; for (let i = 0; i < 2 && ctx.player.hand.length < 8; i++) { ctx.player.hand.push({ ...TOKEN_DUBIAJR }); added++; } if (added) ctx.addLog("⚡ ドゥビア: ドゥビアJr.を" + added + "体手札に！"); },
@@ -1002,6 +1016,13 @@ const DEATH_EFFECT_HANDLERS = {
   death_cost_reduce: (ctx) => { ctx.s.players[ctx.owner].costReduction += 1; ctx.addLog("💜 ブルームハッター: 次のカードコスト-1！"); },
   death_randia: (ctx) => { let spawned = 0; for (let i = 0; i < 4; i++) { const sl = ctx.spawnUnit(ctx.owner, TOKEN_RANDIA2); if (sl) spawned++; } if (spawned > 0) ctx.addLog("🐉 ランディア: 3/2を" + spawned + "体召喚！"); },
   death_draw_link_2: (ctx) => { if (!checkLink(ctx.s, ctx.owner, ctx.slot, null, 2)) { ctx.addLog("🔗 ワドルドゥ: リンク不成立"); return; } if (ctx.drawCard(ctx.owner)) ctx.addLog("📥 ワドルドゥ: 【リンクII】カード1枚引いた！"); },
+  death_dark_mirror: (ctx) => {
+    ctx.damageLeader(ctx.oppOf, 1); ctx.addLog("🌑 邪悪な鏡像: 敵リーダーに1ダメ！");
+    if (ctx.unit.hostingDarkMeta) {
+      const darkMeta = CARD_POOL.find(c => c.id === 802);
+      if (darkMeta) { const sl = ctx.spawnUnit(ctx.owner, darkMeta, ctx.slot); if (sl) ctx.addLog("🌑 ダークメタナイト: 鏡像から出現！"); }
+    }
+  },
   death_sleep_opponent: (ctx) => {
     const opp = ctx.oppOf;
     const oppPlayer = ctx.s.players[opp];
@@ -1311,6 +1332,7 @@ function gameReducer(state, action) {
       if (ep.leaderShield) { ep.leaderShield = false; addLog("🪨 石ころへんしん: バリアが消えた"); }
       UNIT_SLOTS.forEach(sl => { const u = player.board[sl]; if (!u) return; const endHandler = ENDTURN_EFFECT_HANDLERS[u.effect]; if (endHandler) { endHandler({ s, ap, opp, sl, u, player, ep, addLog, drawCard, spawnUnit, checkDeath, triggerOnDamage, dealDamage, millCards, checkLink, damageLeader }); } });
       [ap, opp].forEach(pid => { UNIT_SLOTS.forEach(sl => { const u = s.players[pid].board[sl]; if (u && u.effect === "endturn_starblock_decay") { u.currentHp -= 1; if (u.currentHp <= 0) { addToGraveyard(pid, u); s.players[pid].board[sl] = null; addLog("⭐ 星ブロックが崩れた"); } } if (u && u.effect === "bomb_unit") { u.currentHp -= 1; addLog("💣 ばくだん: 自身に1ダメージ(HP" + u.currentHp + ")"); if (u.currentHp <= 0) checkDeath(pid, sl); } }); });
+      UNIT_SLOTS.forEach(sl => { const u = ep.board[sl]; if (u && u.effect === "death_dark_mirror") { addLog("🌑 邪悪な鏡像: 相手ターン終了により破壊！"); u.currentHp = 0; checkDeath(opp, sl); } });
       if (player.currentCopy && player.currentCopy.id === "C13") { player.hammerFireDmg = (player.hammerFireDmg || 1) + 1; addLog("🔨 おにごろし火炎ハンマー: ダメージが" + player.hammerFireDmg + "に上昇！"); }
       if (player.currentCopy && player.currentCopy.id === "C14") { player.sleepTurns -= 1; if (player.sleepTurns <= 0) { player.currentCopy = null; player.wazaStocks = {}; player.sleepTurns = 0; addLog("💤 スリープ: 目が覚めた！コピー能力が解除された"); } else { addLog("💤 スリープ: あと" + player.sleepTurns + "ターン…Zzz"); } }
       checkWin();

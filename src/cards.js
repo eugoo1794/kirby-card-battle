@@ -36,7 +36,7 @@ export const CARD_RARITY = {
   // ── Purple ──
   701: "SR",
   // ── Black ──
-  801: "SR",
+  801: "SR", 802: "UR",
   // ── Support ──
   191: "UR", 192: "UR", 193: "UR",
 };
@@ -54,6 +54,7 @@ export const TOKEN_FOOD = { id: 860, name: "たべもの", type: "spell", cost: 
 export const TOKEN_WAPOD = { id: 861, name: "ワポッド", type: "helper", cost: 1, attack: 1, hp: 1, attr: "Common", keywords: [], desc: "", isToken: true };
 export const TOKEN_BOMB = { id: 863, name: "ばくだん", type: "helper", cost: 0, attack: 1, hp: 2, attr: "Common", keywords: ["immobile"], desc: "📌攻撃不可\nお互いのターン終了時\n自身に1ダメージ\n死亡時:隣接全ヘルパーに\nATK分ダメージ", effect: "bomb_unit", isToken: true };
 export const TOKEN_SNOWBALL = { id: 864, name: "雪玉", type: "spell", cost: 2, attr: "White", desc: "敵ヘルパー1体を\n-2/-2する", effect: "snowball_debuff", isToken: true };
+export const TOKEN_DARKMIRROR = { id: 870, name: "邪悪な鏡像", type: "helper", cost: 1, attack: 0, hp: 2, attr: "Black", keywords: [], desc: "死亡時:敵リーダーに1ダメ\n本体が潜むなら本体を出す\n相手ターン終了時:破壊", effect: "death_dark_mirror", isToken: true };
 
 // ═══════════════════════════════════════════
 //  SUPPORT CARDS (リック・カイン・クー)
@@ -125,6 +126,7 @@ export const CARD_POOL = [
   { id: 208, name: "デデデ大王", type: "helper", cost: 3, attack: 2, hp: 4, attr: "Red", keywords: [], desc: "召喚時: 残コスト全消費\n→Xダメ&攻撃力+X\n【リンク赤I】ダッシュIを得る", effect: "summon_dedede", targetMode: "enemy_any", lineage: "hammer", linkKeywords: [{ attr: "Red", count: 1, keyword: "dash1" }] },
   { id: 701, name: "ノディ", type: "helper", cost: 1, attack: 1, hp: 2, attr: "Purple", keywords: ["immobile"], desc: "📌攻撃不可\n死亡時: 相手のコピー能力\nを「スリープ」にする", effect: "death_sleep_opponent", lineage: "sleep" },
   { id: 801, name: "シャドーカービィ", type: "helper", cost: 3, attack: 2, hp: 2, attr: "Black", keywords: ["guard1"], desc: "🪨ガードI\n召喚時: 敵ヘルパーの\nATK/HPをコピー", effect: "summon_copy_stats", targetMode: "enemy_helper" },
+  { id: 802, name: "ダークメタナイト", type: "helper", cost: 5, attack: 4, hp: 3, attr: "Black", keywords: ["flying2"], desc: "🪽🪽ふゆうII\n召喚時: ランダムな味方マスに\n邪悪な鏡像を3体出す\nそのうち1体に潜む", effect: "summon_dark_meta" },
   { id: 607, name: "キングスドゥ", type: "helper", cost: 4, attack: 3, hp: 3, attr: "Orange", keywords: ["pierce1"], desc: "🔱貫通I\nターン終了時:\n【リンク:橙II】\n正面の敵全体に3ダメ", effect: "endturn_3dmg_facing_link_o2", lineage: "beam" },
   { id: 608, name: "Mr.ダウター", type: "helper", cost: 4, attack: 2, hp: 4, attr: "Orange", keywords: ["pierce1"], desc: "🔱貫通I\nターン終了時:\nイエロースネークを\nX体出す(X=敵ヘルパー数)", effect: "endturn_spawn_snakes" },
   { id: 409, name: "ギガントエッジ", type: "helper", cost: 4, attack: 3, hp: 5, attr: "Green", keywords: ["block"], desc: "🛡️ブロック", lineage: "sword" },
